@@ -1,0 +1,363 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ข้อมูลของท่าน',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _userType = '';
+
+  void _selectUserType(String type) {
+    setState(() {
+      _userType = type;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_userType.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('เลือกประเภทผู้ใช้'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () => _selectUserType('patient'),
+                child: Text('ผู้รับประทานยา'),
+              ),
+              ElevatedButton(
+                onPressed: () => _selectUserType('caregiver'),
+                child: Text('ผู้ติดตาม'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (_userType == 'patient') {
+      return PatientFormPage(
+        onSubmit: (data) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserInfoPage(
+                userType: 'ผู้รับประทานยา',
+                userData: data,
+                onChangeStatus: () {
+                  setState(() {
+                    _userType = '';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return CaregiverFormPage(
+        onSubmit: (data) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserInfoPage(
+                userType: 'ผู้ติดตาม',
+                userData: data,
+                onChangeStatus: () {
+                  setState(() {
+                    _userType = '';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
+
+class PatientFormPage extends StatefulWidget {
+  final Function(Map<String, String>) onSubmit;
+
+  PatientFormPage({required this.onSubmit});
+
+  @override
+  _PatientFormPageState createState() => _PatientFormPageState();
+}
+
+class _PatientFormPageState extends State<PatientFormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _idNumberController = TextEditingController();
+  final TextEditingController _healthInsuranceController = TextEditingController();
+  final TextEditingController _healthInfoController = TextEditingController();
+  final TextEditingController _hospitalController = TextEditingController();
+  final TextEditingController _appointmentHistoryController = TextEditingController();
+
+  String _gender = 'ชาย';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลผู้รับประทานยา'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'ชื่อ'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกชื่อ';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _surnameController,
+                decoration: InputDecoration(labelText: 'สกุล'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกสกุล';
+                  }
+                  return null;
+                },
+              ),
+              DropdownButtonFormField<String>(
+                value: _gender,
+                decoration: InputDecoration(labelText: 'เพศ'),
+                items: ['ชาย', 'หญิง', 'อื่นๆ'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _gender = newValue!;
+                  });
+                },
+              ),
+              TextFormField(
+                controller: _idNumberController,
+                decoration: InputDecoration(labelText: 'เลขบัตรประชาชน'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเลขบัตรประชาชน';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _healthInsuranceController,
+                decoration: InputDecoration(labelText: 'เอกสารสิทธิ์การรักษาพยาบาล'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเอกสารสิทธิ์การรักษาพยาบาล';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _healthInfoController,
+                decoration: InputDecoration(labelText: 'ข้อมูลสุขภาพโรคประจำตัว ค่าเลือด ความดัน'),
+                maxLines: 3,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกข้อมูลสุขภาพ';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _hospitalController,
+                decoration: InputDecoration(labelText: 'สถานพยาบาลที่เข้ารักษาเป็นประจำ'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกสถานพยาบาล';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _appointmentHistoryController,
+                decoration: InputDecoration(labelText: 'ประวัติวันที่การนัดรับยาหรือตรวจโรค'),
+                maxLines: 3,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกประวัติการนัดรับยา';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Map<String, String> data = {
+                      'ชื่อ': _nameController.text,
+                      'สกุล': _surnameController.text,
+                      'เพศ': _gender,
+                      'เลขบัตรประชาชน': _idNumberController.text,
+                      'เอกสารสิทธิ์การรักษาพยาบาล': _healthInsuranceController.text,
+                      'ข้อมูลสุขภาพ': _healthInfoController.text,
+                      'สถานพยาบาล': _hospitalController.text,
+                      'ประวัติการนัดรับยา': _appointmentHistoryController.text,
+                    };
+                    widget.onSubmit(data);
+                  }
+                },
+                child: Text('บันทึกข้อมูล'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CaregiverFormPage extends StatefulWidget {
+  final Function(Map<String, String>) onSubmit;
+
+  CaregiverFormPage({required this.onSubmit});
+
+  @override
+  _CaregiverFormPageState createState() => _CaregiverFormPageState();
+}
+
+class _CaregiverFormPageState extends State<CaregiverFormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _idNumberController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลผู้ติดตาม'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'ชื่อ'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกชื่อ';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'เบอร์โทร'),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเบอร์โทร';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _idNumberController,
+                decoration: InputDecoration(labelText: 'เลขบัตรประชาชน'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเลขบัตรประชาชน';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Map<String, String> data = {
+                      'ชื่อ': _nameController.text,
+                      'เบอร์โทร': _phoneController.text,
+                      'เลขบัตรประชาชน': _idNumberController.text,
+                    };
+                    widget.onSubmit(data);
+                  }
+                },
+                child: Text('บันทึกข้อมูล'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class UserInfoPage extends StatelessWidget {
+  final String userType;
+  final Map<String, String> userData;
+  final VoidCallback onChangeStatus;
+
+  UserInfoPage({required this.userType, required this.userData, required this.onChangeStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text('ข้อมูลของท่าน'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ประเภทผู้ใช้: $userType', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            ...userData.entries.map((entry) => Text('${entry.key}: ${entry.value}', style: TextStyle(fontSize: 16))),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: onChangeStatus,
+              child: Text('เปลี่ยนสถานะหรือแก้ไขข้อมูล'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
