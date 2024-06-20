@@ -1,0 +1,311 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MedicineApp());
+}
+
+class MedicineApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ตั้งเวลาแจ้งเตือนการรับประทานยา',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const MainScreen(),
+    );
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({Key? key}) : super(key: key);
+
+  @override
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  List<Medicine> medicines = [];
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // เพิ่มยาลงในรายการยาที่มีอยู่แล้ว
+    medicines.addAll([
+      Medicine(name: 'ยาก่อนอาหารเช้า', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาหลังอาหารเช้า', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาก่อนอาหารกลางวัน', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาหลังอาหารกลางวัน', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาหลังอาหารเย็น', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาก่อนนอน', time: 'โปรดเลือกเวลารับประทานยา'),
+    ]);
+  }
+
+  void updateMedicineTimeAndLed(Medicine medicine, String time, List<bool> ledStates) {
+    setState(() {
+      medicine.time = time;
+      medicine.ledStates = ledStates;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('ตั้งค่าสำหรับ ${medicine.name} เวลา $time เรียบร้อยแล้ว'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  Widget _buildScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildMedicineList();
+      case 1:
+        return NotificationScreen();
+      case 2:
+        return FamilySharingScreen();
+      case 3:
+        return MedicineInfoScreen();
+      default:
+        return _buildMedicineList();
+    }
+  }
+
+  Widget _buildMedicineList() {
+    return ListView.builder(
+      itemCount: medicines.length,
+      itemBuilder: (context, index) {
+        Medicine medicine = medicines[index];
+        return ListTile(
+          title: Text(medicine.name),
+          subtitle: Text('${medicine.time} - ${_getSelectedLedBoxes(medicine.ledStates)}'),
+          trailing: IconButton(
+            icon: const Icon(Icons.alarm),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AlarmScreen(
+                    medicine: medicine,
+                    onTimeAndLedSelected: updateMedicineTimeAndLed,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  String _getSelectedLedBoxes(List<bool> ledStates) {
+    List<int> selectedBoxes = [];
+    for (int i = 0; i < ledStates.length; i++) {
+      if (ledStates[i]) {
+        selectedBoxes.add(i + 1);
+      }
+    }
+    return selectedBoxes.isNotEmpty ? 'กล่อง ${selectedBoxes.join(", ")}' : 'ยังไม่เลือกกล่อง';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ตั้งเวลาแจ้งเตือนการรับประทานยา'),
+      ),
+      body: _buildScreen(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm),
+            label: 'ตั้งเวลา',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'แจ้งเตือน',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.share),
+            label: 'แชร์ครอบครัว',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info),
+            label: 'ข้อมูลยา',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class Medicine {
+  String name;
+  String time;
+  List<bool> ledStates;
+
+  Medicine({required this.name, required this.time, this.ledStates = const [false, false, false, false, false, false]});
+}
+
+class AlarmScreen extends StatefulWidget {
+  final Medicine medicine;
+  final Function(Medicine, String, List<bool>) onTimeAndLedSelected;
+
+  AlarmScreen({required this.medicine, required this.onTimeAndLedSelected});
+
+  @override
+  _AlarmScreenState createState() => _AlarmScreenState();
+}
+
+class _AlarmScreenState extends State<AlarmScreen> {
+  late TimeOfDay selectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    // เซ็ตเวลาเริ่มต้นเป็นเวลาที่กำหนดไว้ล่วงหน้า หรือเป็นเวลาเริ่มต้นหากยังไม่ได้ตั้ง
+    selectedTime = TimeOfDay.now();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ตั้งเวลาแจ้งเตือน'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(widget.medicine.name),
+            Text(widget.medicine.time == 'โปรดเลือกเวลารับประทานยา'
+                ? 'โปรดเลือกเวลารับประทานยา'
+                : widget.medicine.time),
+            ElevatedButton(
+              onPressed: () async {
+                final TimeOfDay? newTime = await showTimePicker(
+                  context: context,
+                  initialTime: selectedTime,
+                );
+                if (newTime != null) {
+                  setState(() {
+                    selectedTime = newTime;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LedSelectionScreen(
+                          medicine: widget.medicine,
+                          selectedTime: selectedTime,
+                          onTimeAndLedSelected: widget.onTimeAndLedSelected,
+                        ),
+                      ),
+                    );
+                  });
+                }
+              },
+              child: Text('เลือกเวลา'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LedSelectionScreen extends StatefulWidget {
+  final Medicine medicine;
+  final TimeOfDay selectedTime;
+  final Function(Medicine, String, List<bool>) onTimeAndLedSelected;
+
+  LedSelectionScreen({
+    required this.medicine,
+    required this.selectedTime,
+    required this.onTimeAndLedSelected,
+  });
+
+  @override
+  _LedSelectionScreenState createState() => _LedSelectionScreenState();
+}
+
+class _LedSelectionScreenState extends State<LedSelectionScreen> {
+  List<bool> ledStates = List.filled(6, false);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('เลือกหลอดไฟสำหรับ ${widget.medicine.name}'),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('เลือกหลอดไฟที่ต้องการเปิดเมื่อถึงเวลา ${widget.selectedTime.format(context)}'),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: ledStates.length,
+              itemBuilder: (context, index) {
+                return CheckboxListTile(
+                  title: Text('หลอดไฟกล่องที่ ${index + 1}'),
+                  value: ledStates[index],
+                  onChanged: (bool? value) {
+                    setState(() {
+                      ledStates[index] = value ?? false;
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // บันทึกหลอดไฟที่เลือกไว้และกลับไปหน้าแรก
+              final selectedTimeFormatted = widget.selectedTime.format(context);
+              widget.onTimeAndLedSelected(widget.medicine, selectedTimeFormatted, ledStates);
+              Navigator.popUntil(context, ModalRoute.withName('/'));
+            },
+            child: Text('บันทึก'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class NotificationScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('หน้าจอแจ้งเตือนการทานยา'),
+    );
+  }
+}
+
+class FamilySharingScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('หน้าจอแชร์ครอบครัว'),
+    );
+  }
+}
+
+class MedicineInfoScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('หน้าจอข้อมูลยาของท่าน'),
+    );
+  }
+}
