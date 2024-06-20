@@ -1,0 +1,224 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(DrugInfoApp());
+}
+
+class DrugInfoApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ข้อมูลยาของท่าน',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: DrugInfoHomePage(),
+    );
+  }
+}
+
+class DrugInfoHomePage extends StatefulWidget {
+  @override
+  _DrugInfoHomePageState createState() => _DrugInfoHomePageState();
+}
+
+class _DrugInfoHomePageState extends State<DrugInfoHomePage> {
+  List<DrugInfo> drugList = List.generate(6, (index) => DrugInfo());
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลยาของท่าน'),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(8.0),
+        itemCount: drugList.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () async {
+              final updatedDrugInfo = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DrugInfoDetailPage(
+                    drugInfo: drugList[index],
+                    boxNumber: index + 1,
+                  ),
+                ),
+              );
+              if (updatedDrugInfo != null) {
+                setState(() {
+                  drugList[index] = updatedDrugInfo;
+                });
+              }
+            },
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.medication,
+                      size: 50,
+                      color: Colors.blue,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'กล่องยาที่ ${index + 1}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (drugList[index].name.isNotEmpty) ...[
+                            SizedBox(height: 5),
+                            Text('ชื่อยา: ${drugList[index].name}'),
+                            Text('ชนิดยา: ${drugList[index].type}'),
+                            Text('ปริมาณยาที่ใช้: ${drugList[index].amount}'),
+                            Text('ความถี่ในการใช้ยา: ${drugList[index].frequency}'),
+                            Text('สรรพคุณ: ${drugList[index].description}'),
+                          ] else
+                            Text('ยังไม่ได้กรอกข้อมูล'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DrugInfo {
+  String name = '';
+  String type = 'ของเหลว';
+  String amount = '';
+  String frequency = 'เช้า';
+  String description = '';
+}
+
+class DrugInfoDetailPage extends StatefulWidget {
+  final DrugInfo drugInfo;
+  final int boxNumber;
+
+  DrugInfoDetailPage({required this.drugInfo, required this.boxNumber});
+
+  @override
+  _DrugInfoDetailPageState createState() => _DrugInfoDetailPageState();
+}
+
+class _DrugInfoDetailPageState extends State<DrugInfoDetailPage> {
+  late TextEditingController nameController;
+  late TextEditingController amountController;
+  late TextEditingController descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.drugInfo.name);
+    amountController = TextEditingController(text: widget.drugInfo.amount);
+    descriptionController = TextEditingController(text: widget.drugInfo.description);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    amountController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('กล่องยาที่ ${widget.boxNumber}'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            TextField(
+              decoration: InputDecoration(labelText: 'ชื่อยา'),
+              onChanged: (value) {
+                widget.drugInfo.name = value;
+              },
+              controller: nameController,
+            ),
+            DropdownButton<String>(
+              value: widget.drugInfo.type,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    widget.drugInfo.type = value;
+                  });
+                }
+              },
+              items: [
+                'ของเหลว', 'กึ่งของแข็ง', 'ของแข็ง', 'รูปแบบอื่นๆ'
+              ].map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'ปริมาณยาที่ใช้'),
+              onChanged: (value) {
+                widget.drugInfo.amount = value;
+              },
+              controller: amountController,
+            ),
+            DropdownButton<String>(
+              value: widget.drugInfo.frequency,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    widget.drugInfo.frequency = value;
+                  });
+                }
+              },
+              items: [
+                'เช้า', 'กลางวัน', 'เย็น', 'ก่อนนอน'
+              ].map((freq) {
+                return DropdownMenuItem(
+                  value: freq,
+                  child: Text(freq),
+                );
+              }).toList(),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'สรรพคุณ'),
+              onChanged: (value) {
+                widget.drugInfo.description = value;
+              },
+              controller: descriptionController,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, widget.drugInfo);
+              },
+              child: Text('บันทึก'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
