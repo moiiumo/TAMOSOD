@@ -1,0 +1,317 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Family Share',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: FamilySharePage(),
+    );
+  }
+}
+
+class FamilySharePage extends StatefulWidget {
+  @override
+  _FamilySharePageState createState() => _FamilySharePageState();
+}
+
+class _FamilySharePageState extends State<FamilySharePage> {
+  List<FamilyMember> familyMembers = [];
+
+  void _addFamilyMember(FamilyMember member) {
+    setState(() {
+      familyMembers.add(member);
+    });
+  }
+
+  void _removeFamilyMember(int index) {
+    setState(() {
+      familyMembers.removeAt(index);
+    });
+  }
+
+  void _showAddMemberDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AddMemberDialog(onAddMember: _addFamilyMember);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Family Share'),
+      ),
+      body: Column(
+        children: <Widget>[
+          ElevatedButton(
+            onPressed: _showAddMemberDialog,
+            child: Text('เพิ่มสมาชิก'),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: familyMembers.length,
+              itemBuilder: (context, index) {
+                return FamilyMemberCard(
+                  member: familyMembers[index],
+                  onDelete: () => _removeFamilyMember(index),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FamilyMember {
+  final String name;
+  final String memberNumber;
+  final String role; // 'ผู้รับประทานยา' หรือ 'สมาชิกใหม่'
+  final String relationship;
+  final String phoneNumber;
+  final IconData icon;
+
+  FamilyMember({
+    required this.name,
+    required this.memberNumber,
+    required this.role,
+    required this.relationship,
+    required this.phoneNumber,
+    required this.icon,
+  });
+}
+
+class AddMemberDialog extends StatefulWidget {
+  final Function(FamilyMember) onAddMember;
+
+  AddMemberDialog({required this.onAddMember});
+
+  @override
+  _AddMemberDialogState createState() => _AddMemberDialogState();
+}
+
+class _AddMemberDialogState extends State<AddMemberDialog> {
+  final _formKey = GlobalKey<FormState>();
+  String _name = '';
+  String _memberNumber = '';
+  String _role = 'ผู้รับประทานยา';
+  String _relationship = 'คุณพ่อ';
+  String _phoneNumber = '';
+  IconData _selectedIcon = Icons.person;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('เพิ่มสมาชิกใหม่'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                decoration: InputDecoration(labelText: 'ชื่อสมาชิก'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกชื่อสมาชิก';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _name = value!;
+                },
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'เลขสมาชิก'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกเลขสมาชิก';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _memberNumber = value!;
+                },
+              ),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: 'สถานะ'),
+                value: _role,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _role = newValue!;
+                  });
+                },
+                items: <String>['ผู้รับประทานยา', 'สมาชิกใหม่']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: 'ความสัมพันธ์'),
+                value: _relationship,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _relationship = newValue!;
+                  });
+                },
+                items: <String>[
+                  'คุณพ่อ',
+                  'คุณแม่',
+                  'พี่สาว/พี่ชาย',
+                  'น้องสาว/น้องชาย',
+                  'คุณอา/คุณป้า',
+                  'คุณตา/คุณยาย',
+                  'คุณทวด',
+                  'ผู้ดูแล',
+                  'ผู้รับการดูแล'
+                ].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'เบอร์โทรติดต่อ'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกเบอร์โทรติดต่อ';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _phoneNumber = value!;
+                },
+              ),
+              IconButton(
+                icon: Icon(_selectedIcon),
+                onPressed: () async {
+                  IconData? icon = await _pickIcon(context);
+                  if (icon != null) {
+                    setState(() {
+                      _selectedIcon = icon;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: Text('ยกเลิก'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: Text('เพิ่ม'),
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              _formKey.currentState!.save();
+              widget.onAddMember(FamilyMember(
+                name: _name,
+                memberNumber: _memberNumber,
+                role: _role,
+                relationship: _relationship,
+                phoneNumber: _phoneNumber,
+                icon: _selectedIcon,
+              ));
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<IconData?> _pickIcon(BuildContext context) async {
+    return showDialog<IconData>(
+      context: context,
+      builder: (BuildContext context) {
+        return IconPickerDialog();
+      },
+    );
+  }
+}
+
+class IconPickerDialog extends StatelessWidget {
+  final List<IconData> icons = [
+    Icons.person,
+    Icons.person_outline,
+    Icons.person_pin,
+    Icons.person_add,
+    Icons.face,
+    Icons.child_care,
+    Icons.accessibility,
+    Icons.emoji_people,
+    Icons.elderly,
+    Icons.baby_changing_station,
+    Icons.family_restroom,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('เลือกไอคอน'),
+      content: SingleChildScrollView(
+        child: Wrap(
+          children: icons.map((icon) {
+            return IconButton(
+              icon: Icon(icon),
+              onPressed: () {
+                Navigator.of(context).pop(icon);
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class FamilyMemberCard extends StatelessWidget {
+  final FamilyMember member;
+  final VoidCallback onDelete;
+
+  FamilyMemberCard({required this.member, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(member.icon),
+        title: Text(member.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('เลขสมาชิก: ${member.memberNumber}'),
+            Text('สถานะ: ${member.role}'),
+            Text('ความสัมพันธ์: ${member.relationship}'),
+            Text('เบอร์โทร: ${member.phoneNumber}'),
+          ],
+        ),
+        trailing: IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: onDelete,
+        ),
+      ),
+    );
+  }
+}
