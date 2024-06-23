@@ -48,7 +48,7 @@ class _MainScreenState extends State<MainScreen> {
   void updateMedicineTimeAndLed(Medicine medicine, String time, List<bool> ledStates) {
     setState(() {
       medicine.time = time;
-      medicine.ledStates = ledStates;
+      medicine.ledStates = List.from(ledStates); // สร้างสำเนาใหม่
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -324,7 +324,7 @@ class _LedSelectionScreenState extends State<LedSelectionScreen> {
   void initState() {
     super.initState();
     // ตั้งค่า ledStates เริ่มต้นจาก medicine ที่ส่งมา
-    ledStates = widget.medicine.ledStates;
+    ledStates = List.from(widget.medicine.ledStates); // สร้างสำเนา
   }
 
   @override
@@ -360,7 +360,7 @@ class _LedSelectionScreenState extends State<LedSelectionScreen> {
               // บันทึกหลอดไฟที่เลือกไว้และกลับไปหน้าแรก
               final selectedTimeFormatted = widget.selectedTime.format(context);
               widget.onTimeAndLedSelected(widget.medicine, selectedTimeFormatted, ledStates);
-              Navigator.popUntil(context, ModalRoute.withName('/'));
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
             child: Text('บันทึก'),
           ),
@@ -374,14 +374,7 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'หน้าจอข้อความแจ้งเตือน',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow[800],
-          fontSize: 32,
-        ),
-      ),
+      child: Text('หน้าจอข้อความแจ้งเตือน'),
     );
   }
 }
@@ -390,14 +383,7 @@ class FamilySharingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'หน้าจอแชร์ครอบครัว',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow[800],
-          fontSize: 32,
-        ),
-      ),
+      child: Text('หน้าจอแชร์ครอบครัว'),
     );
   }
 }
@@ -406,14 +392,7 @@ class UserInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'หน้าจอข้อมูลของท่าน',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow[800],
-          fontSize: 32,
-        ),
-      ),
+      child: Text('หน้าจอข้อมูลของท่าน'),
     );
   }
 }
@@ -422,15 +401,10 @@ class MedicineInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'หน้าจอข้อมูลยาของท่าน',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.yellow[800],
-          fontSize: 32,
-        ),
-      ),
+      child: Text('หน้าจอข้อมูลยาของท่าน'),
     );
   }
 }
+
+
 
