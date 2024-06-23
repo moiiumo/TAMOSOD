@@ -10,8 +10,10 @@ class MedicineApp extends StatelessWidget {
     return MaterialApp(
       title: 'ตั้งเวลาแจ้งเตือนการรับประทานยา',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        primaryColor: Colors.green[900],
+        hintColor: Colors.yellow[800],
       ),
       home: const MainScreen(),
     );
@@ -52,9 +54,15 @@ class _MainScreenState extends State<MainScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('ตั้งค่าสำหรับ ${medicine.name} เวลา $time เรียบร้อยแล้ว'),
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
+  }
+
+  void toggleNotification(Medicine medicine) {
+    setState(() {
+      medicine.enabled = !medicine.enabled;
+    });
   }
 
   void _onItemTapped(int index) {
@@ -72,9 +80,28 @@ class _MainScreenState extends State<MainScreen> {
       case 2:
         return FamilySharingScreen();
       case 3:
+        return UserInfoScreen();
+      case 4:
         return MedicineInfoScreen();
       default:
         return _buildMedicineList();
+    }
+  }
+
+  String _getAppBarTitle() {
+    switch (_selectedIndex) {
+      case 0:
+        return 'ตั้งเวลา';
+      case 1:
+        return 'ข้อความแจ้งเตือน';
+      case 2:
+        return 'แชร์ครอบครัว';
+      case 3:
+        return 'ข้อมูลของท่าน';
+      case 4:
+        return 'ข้อมูลยาของท่าน';
+      default:
+        return 'ตั้งเวลา';
     }
   }
 
@@ -83,22 +110,49 @@ class _MainScreenState extends State<MainScreen> {
       itemCount: medicines.length,
       itemBuilder: (context, index) {
         Medicine medicine = medicines[index];
-        return ListTile(
-          title: Text(medicine.name),
-          subtitle: Text('${medicine.time} - ${_getSelectedLedBoxes(medicine.ledStates)}'),
-          trailing: IconButton(
-            icon: const Icon(Icons.alarm),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AlarmScreen(
-                    medicine: medicine,
-                    onTimeAndLedSelected: updateMedicineTimeAndLed,
-                  ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              title: Text(
+                medicine.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 32, 20, 1),
                 ),
-              );
-            },
+              ),
+              subtitle: Text('${medicine.time} - ${_getSelectedLedBoxes(medicine.ledStates)}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: medicine.enabled,
+                    onChanged: (bool value) {
+                      toggleNotification(medicine);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.alarm),
+                    color: Colors.yellow[800],
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AlarmScreen(
+                            medicine: medicine,
+                            onTimeAndLedSelected: updateMedicineTimeAndLed,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -119,30 +173,43 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ตั้งเวลาแจ้งเตือนการรับประทานยา'),
+        title: Text(
+          _getAppBarTitle(),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.yellow[800],
+          ),
+        ),
+        backgroundColor: Colors.green[900],
       ),
       body: _buildScreen(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.alarm),
+            icon: Icon(Icons.alarm, color: Colors.yellow[800]),
             label: 'ตั้งเวลา',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'แจ้งเตือน',
+            icon: Icon(Icons.notifications, color: Colors.yellow[800]),
+            label: 'ข้อความแจ้งเตือน',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.share),
+            icon: Icon(Icons.share, color: Colors.yellow[800]),
             label: 'แชร์ครอบครัว',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'ข้อมูลยา',
+            icon: Icon(Icons.person, color: Colors.yellow[800]),
+            label: 'ข้อมูลของท่าน',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info, color: Colors.yellow[800]),
+            label: 'ข้อมูลยาของท่าน',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.red,
+        unselectedItemColor: Colors.yellow[800],
         onTap: _onItemTapped,
       ),
     );
@@ -153,15 +220,21 @@ class Medicine {
   String name;
   String time;
   List<bool> ledStates;
+  bool enabled;
 
-  Medicine({required this.name, required this.time, this.ledStates = const [false, false, false, false, false, false]});
+  Medicine({
+    required this.name,
+    required this.time,
+    this.ledStates = const [false, false, false, false, false, false],
+    this.enabled = true,
+  });
 }
 
 class AlarmScreen extends StatefulWidget {
   final Medicine medicine;
   final Function(Medicine, String, List<bool>) onTimeAndLedSelected;
 
-  AlarmScreen({required this.medicine, required this.onTimeAndLedSelected});
+  const AlarmScreen({required this.medicine, required this.onTimeAndLedSelected});
 
   @override
   _AlarmScreenState createState() => _AlarmScreenState();
@@ -182,6 +255,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ตั้งเวลาแจ้งเตือน'),
+        backgroundColor: Colors.green[900],
       ),
       body: Center(
         child: Column(
@@ -196,6 +270,12 @@ class _AlarmScreenState extends State<AlarmScreen> {
                 final TimeOfDay? newTime = await showTimePicker(
                   context: context,
                   initialTime: selectedTime,
+                  builder: (BuildContext context, Widget? child) {
+                    return MediaQuery(
+                      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                      child: child!,
+                    );
+                  },
                 );
                 if (newTime != null) {
                   setState(() {
@@ -238,26 +318,33 @@ class LedSelectionScreen extends StatefulWidget {
 }
 
 class _LedSelectionScreenState extends State<LedSelectionScreen> {
-  List<bool> ledStates = List.filled(6, false);
+  List<bool> ledStates = List.generate(6, (index) => false);
+
+  @override
+  void initState() {
+    super.initState();
+    // ตั้งค่า ledStates เริ่มต้นจาก medicine ที่ส่งมา
+    ledStates = widget.medicine.ledStates;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('เลือกหลอดไฟสำหรับ ${widget.medicine.name}'),
+        title: Text('เลือกกล่องยาที่จะเปิด'),
+        backgroundColor: Colors.green[900],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text('เลือกหลอดไฟที่ต้องการเปิดเมื่อถึงเวลา ${widget.selectedTime.format(context)}'),
+          ListTile(
+            title: Text('เลือกเวลารับประทานยา: ${widget.selectedTime.format(context)}'),
           ),
           Expanded(
             child: ListView.builder(
               itemCount: ledStates.length,
               itemBuilder: (context, index) {
                 return CheckboxListTile(
-                  title: Text('หลอดไฟกล่องที่ ${index + 1}'),
+                  title: Text('กล่องยา ${index + 1}'),
                   value: ledStates[index],
                   onChanged: (bool? value) {
                     setState(() {
@@ -287,7 +374,14 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('หน้าจอแจ้งเตือนการทานยา'),
+      child: Text(
+        'หน้าจอข้อความแจ้งเตือน',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.yellow[800],
+          fontSize: 32,
+        ),
+      ),
     );
   }
 }
@@ -296,7 +390,30 @@ class FamilySharingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('หน้าจอแชร์ครอบครัว'),
+      child: Text(
+        'หน้าจอแชร์ครอบครัว',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.yellow[800],
+          fontSize: 32,
+        ),
+      ),
+    );
+  }
+}
+
+class UserInfoScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'หน้าจอข้อมูลของท่าน',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.yellow[800],
+          fontSize: 32,
+        ),
+      ),
     );
   }
 }
@@ -305,7 +422,15 @@ class MedicineInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('หน้าจอข้อมูลยาของท่าน'),
+      child: Text(
+        'หน้าจอข้อมูลยาของท่าน',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.yellow[800],
+          fontSize: 32,
+        ),
+      ),
     );
   }
 }
+
