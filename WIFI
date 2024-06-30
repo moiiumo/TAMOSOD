@@ -1,0 +1,103 @@
+ flutter build apk --split-per-abi
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Set Time and Control LED'),
+        ),
+        body: TimeSetter(),
+      ),
+    );
+  }
+}
+
+class TimeSetter extends StatefulWidget {
+  @override
+  _TimeSetterState createState() => _TimeSetterState();
+}
+
+class _TimeSetterState extends State<TimeSetter> {
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _isLEDOn = false;
+
+  Future<void> _sendTime(TimeOfDay time) async {
+    final String url = 'http://192.168.4.1/set_time'; // IP ของ ESP32 เมื่อเป็น AP
+    final response = await http.post(
+      Uri.parse(url),
+      body: {
+        'hour': '${time.hour}',
+        'minute': '${time.minute}',
+        'second': '0', // ปรับเปลี่ยนตามความต้องการของคุณ
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('Time sent successfully');
+    } else {
+      print('Failed to send time');
+    }
+  }
+
+  Future<void> _toggleLED(bool turnOn) async {
+    final String url = turnOn ? 'http://192.168.4.1/LED/ON' : 'http://192.168.4.1/LED/OFF';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _isLEDOn = turnOn;
+      });
+      print('LED ${turnOn ? 'ON' : 'OFF'}');
+    } else {
+      print('Failed to toggle LED');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Selected Time: ${_selectedTime.format(context)}',
+          style: TextStyle(fontSize: 24),
+        ),
+        SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: () async {
+            final TimeOfDay? pickedTime = await showTimePicker(
+              context: context,
+              initialTime: _selectedTime,
+              builder: (BuildContext context, Widget? child) {
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                  child: child ?? Container(),
+                );
+              },
+            );
+            if (pickedTime != null && pickedTime != _selectedTime) {
+              setState(() {
+                _selectedTime = pickedTime;
+              });
+              _sendTime(pickedTime);
+            }
+          },
+          child: Text('Pick Time'),
+        ),
+        SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: () => _toggleLED(!_isLEDOn),
+          child: Text(_isLEDOn ? 'Turn LED Off' : 'Turn LED On'),
+        ),
+      ],
+    );
+  }
+}
