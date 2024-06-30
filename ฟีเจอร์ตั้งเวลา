@@ -40,6 +40,7 @@ class _MainScreenState extends State<MainScreen> {
       Medicine(name: 'ยาหลังอาหารเช้า', time: 'โปรดเลือกเวลารับประทานยา'),
       Medicine(name: 'ยาก่อนอาหารกลางวัน', time: 'โปรดเลือกเวลารับประทานยา'),
       Medicine(name: 'ยาหลังอาหารกลางวัน', time: 'โปรดเลือกเวลารับประทานยา'),
+      Medicine(name: 'ยาก่อนอาหารเย็น', time: 'โปรดเลือกเวลารับประทานยา'),
       Medicine(name: 'ยาหลังอาหารเย็น', time: 'โปรดเลือกเวลารับประทานยา'),
       Medicine(name: 'ยาก่อนนอน', time: 'โปรดเลือกเวลารับประทานยา'),
     ]);
@@ -234,7 +235,7 @@ class AlarmScreen extends StatefulWidget {
   final Medicine medicine;
   final Function(Medicine, String, List<bool>) onTimeAndLedSelected;
 
-  const AlarmScreen({required this.medicine, required this.onTimeAndLedSelected});
+  const AlarmScreen({super.key, required this.medicine, required this.onTimeAndLedSelected});
 
   @override
   _AlarmScreenState createState() => _AlarmScreenState();
@@ -331,7 +332,7 @@ class _LedSelectionScreenState extends State<LedSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('เลือกกล่องยาที่จะเปิด'),
+        title: const Text('เลือกหมายเลขกล่องยาที่ท่านต้องรับประทาน'),
         backgroundColor: Colors.green[900],
       ),
       body: Column(
@@ -344,7 +345,7 @@ class _LedSelectionScreenState extends State<LedSelectionScreen> {
               itemCount: ledStates.length,
               itemBuilder: (context, index) {
                 return CheckboxListTile(
-                  title: Text('กล่องยา ${index + 1}'),
+                  title: Text('หมายเลขกล่องยา ${index + 1}'),
                   value: ledStates[index],
                   onChanged: (bool? value) {
                     setState(() {
@@ -362,7 +363,7 @@ class _LedSelectionScreenState extends State<LedSelectionScreen> {
               widget.onTimeAndLedSelected(widget.medicine, selectedTimeFormatted, ledStates);
               Navigator.popUntil(context, (route) => route.isFirst);
             },
-            child: Text('บันทึก'),
+            child: const Text('บันทึก'),
           ),
         ],
       ),
@@ -405,6 +406,4 @@ class MedicineInfoScreen extends StatelessWidget {
     );
   }
 }
-
-
 
