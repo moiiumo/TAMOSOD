@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'LED Control',
+      theme: ThemeData(primarySwatch: Colors.green),
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  bool led1Checked = false;
+  bool led2Checked = false;
+  bool led3Checked = false;
+  bool led4Checked = false;
+  bool led5Checked = false;
+  bool led6Checked = false;
+  bool led7Checked = false;
+  bool led8Checked = false;
+  final String esp32Ip = '192.168.1.100'; // Replace with your ESP32 IP address
+
+  void _controlLEDs() async {
+    String url1 = 'http://$esp32Ip/led/control1';
+    String url2 = 'http://$esp32Ip/led/control2';
+    Map<String, String> headers = {"Content-type": "application/x-www-form-urlencoded"};
+    String body = "led1=${led1Checked ? 'on' : 'off'}&led2=${led2Checked ? 'on' : 'off'}&led3=${led3Checked ? 'on' : 'off'}&led4=${led4Checked ? 'on' : 'off'}&led5=${led5Checked ? 'on' : 'off'}&led6=${led6Checked ? 'on' : 'off'}&led7=${led7Checked ? 'on' : 'off'}&led8=${led8Checked ? 'on' : 'off'}";
+
+    try {
+      final response1 = await http.post(Uri.parse(url1), headers: headers, body: body);
+      final response2 = await http.post(Uri.parse(url2), headers: headers, body: body);
+      if (response1.statusCode == 200 && response2.statusCode == 200) {
+        print('LED control successful');
+      } else {
+        print('Failed to control LEDs: ${response1.statusCode}, ${response2.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('LED Control')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            CheckboxListTile(
+              title: Text('LED 1'),
+              value: led1Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led1Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 2'),
+              value: led2Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led2Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 3'),
+              value: led3Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led3Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 4'),
+              value: led4Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led4Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 5'),
+              value: led5Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led5Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 6'),
+              value: led6Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led6Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 7'),
+              value: led7Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led7Checked = value!;
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: Text('LED 8'),
+              value: led8Checked,
+              onChanged: (bool? value) {
+                setState(() {
+                  led8Checked = value!;
+                });
+              },
+            ),
+            ElevatedButton(
+              onPressed: _controlLEDs,
+              child: Text('Submit'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
