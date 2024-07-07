@@ -1,0 +1,182 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ตั้งค่า WiFi ESP32',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: WiFiConfigPage(),
+    );
+  }
+}
+
+class WiFiConfigPage extends StatefulWidget {
+  @override
+  _WiFiConfigPageState createState() => _WiFiConfigPageState();
+}
+
+class _WiFiConfigPageState extends State<WiFiConfigPage> {
+  final ssidController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  Future<void> submitWiFiConfig() async {
+    final ssid = ssidController.text;
+    final password = passwordController.text;
+
+    final response = await http.post(
+      Uri.parse('http://192.168.4.1/connect_wifi'), // IP ของ ESP32 ในโหมด AP
+      body: {
+        'ssid': ssid,
+        'password': password,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseBody = response.body;
+      if (responseBody.contains('Connecting to WiFi...')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('กำลังเชื่อมต่อ WiFi...')),
+        );
+
+        // เช็คสถานะการเชื่อมต่อ WiFi อีกครั้ง
+        final checkResponse = await http.get(Uri.parse('http://192.168.4.1/connect_wifi_status'));
+        if (checkResponse.statusCode == 200 && checkResponse.body.contains('Connected to WiFi successfully!')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('เชื่อมต่อ WiFi สำเร็จ!')),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LEDControlPage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('เชื่อมต่อ WiFi ไม่สำเร็จ')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เชื่อมต่อ WiFi ไม่สำเร็จ')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ส่งข้อมูล WiFi ไม่สำเร็จ')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ตั้งค่า WiFi ESP32'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: ssidController,
+              decoration: InputDecoration(labelText: 'SSID'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(labelText: 'รหัสผ่าน'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: submitWiFiConfig,
+              child: Text('ส่ง'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LEDControlPage extends StatefulWidget {
+  @override
+  _LEDControlPageState createState() => _LEDControlPageState();
+}
+
+class _LEDControlPageState extends State<LEDControlPage> {
+  final idController = TextEditingController();
+  final pwdController = TextEditingController();
+  final ledController = TextEditingController();
+
+  Future<void> submitLEDConfig() async {
+    final id = idController.text;
+    final pwd = pwdController.text;
+    final led = ledController.text;
+
+    final response = await http.post(
+      Uri.parse('http://192.168.4.1/led_control'), // IP ของ ESP32 ในโหมด AP
+      body: {
+        'id': id,
+        'pwd': pwd,
+        'led': led,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('อัปเดตสถานะ LED สำเร็จ!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('อัปเดตสถานะ LED ไม่สำเร็จ')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ควบคุม LED'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: idController,
+              decoration: InputDecoration(labelText: 'ID'),
+            ),
+            TextField(
+              controller: pwdController,
+              decoration: InputDecoration(labelText: 'รหัสผ่าน'),
+            ),
+            TextField(
+              controller: ledController,
+              decoration: InputDecoration(labelText: 'สถานะ LED (0 หรือ 1)'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: submitLEDConfig,
+              child: Text('ส่ง'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('กลับไปตั้งค่า WiFi'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
