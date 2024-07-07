@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Set Time'),
+        ),
+        body: TimeSetter(),
+      ),
+    );
+  }
+}
+
+class TimeSetter extends StatefulWidget {
+  @override
+  _TimeSetterState createState() => _TimeSetterState();
+}
+
+class _TimeSetterState extends State<TimeSetter> {
+  TimeOfDay _selectedTime1 = TimeOfDay.now();
+  TimeOfDay _selectedTime2 = TimeOfDay.now();
+  TimeOfDay _selectedTime3 = TimeOfDay.now();
+  TimeOfDay _selectedTime4 = TimeOfDay.now();
+  TimeOfDay _selectedTime5 = TimeOfDay.now();
+  TimeOfDay _selectedTime6 = TimeOfDay.now();
+  TimeOfDay _selectedTime7 = TimeOfDay.now();
+
+  Future<void> _sendTime(TimeOfDay time, String path, String hourKey, String minuteKey, String secondKey) async {
+    final String url = 'http://192.168.4.1/$path';
+    final response = await http.post(
+      Uri.parse(url),
+      body: {
+        hourKey: '${time.hour}',
+        minuteKey: '${time.minute}',
+        secondKey: '0', // Adjust this if needed
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('Time sent successfully to $path');
+    } else {
+      print('Failed to send time to $path');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildTimePicker(1, _selectedTime1, 'set_time', 'hour', 'minute', 'second', (newTime) {
+            setState(() {
+              _selectedTime1 = newTime;
+            });
+            _sendTime(newTime, 'set_time', 'hour', 'minute', 'second');
+          }),
+          _buildTimePicker(2, _selectedTime2, 'set_time1', 'hour1', 'minute1', 'second1', (newTime) {
+            setState(() {
+              _selectedTime2 = newTime;
+            });
+            _sendTime(newTime, 'set_time1', 'hour1', 'minute1', 'second1');
+          }),
+          _buildTimePicker(3, _selectedTime3, 'set_time2', 'hour2', 'minute2', 'second2', (newTime) {
+            setState(() {
+              _selectedTime3 = newTime;
+            });
+            _sendTime(newTime, 'set_time2', 'hour2', 'minute2', 'second2');
+          }),
+          _buildTimePicker(4, _selectedTime4, 'set_time3', 'hour3', 'minute3', 'second3', (newTime) {
+            setState(() {
+              _selectedTime4 = newTime;
+            });
+            _sendTime(newTime, 'set_time3', 'hour3', 'minute3', 'second3');
+          }),
+          _buildTimePicker(5, _selectedTime5, 'set_time4', 'hour4', 'minute4', 'second4', (newTime) {
+            setState(() {
+              _selectedTime5 = newTime;
+            });
+            _sendTime(newTime, 'set_time4', 'hour4', 'minute4', 'second4');
+          }),
+          _buildTimePicker(6, _selectedTime6, 'set_time5', 'hour5', 'minute5', 'second5', (newTime) {
+            setState(() {
+              _selectedTime6 = newTime;
+            });
+            _sendTime(newTime, 'set_time5', 'hour5', 'minute5', 'second5');
+          }),
+          _buildTimePicker(7, _selectedTime7, 'set_time6', 'hour6', 'minute6', 'second6', (newTime) {
+            setState(() {
+              _selectedTime7 = newTime;
+            });
+            _sendTime(newTime, 'set_time6', 'hour6', 'minute6', 'second6');
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimePicker(int index, TimeOfDay selectedTime, String path, String hourKey, String minuteKey, String secondKey, Function(TimeOfDay) onTimePicked) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+      child: Column(
+        children: [
+          Text(
+            'Selected Time $index: ${selectedTime.format(context)}',
+            style: TextStyle(fontSize: 24),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () async {
+              final TimeOfDay? pickedTime = await showTimePicker(
+                context: context,
+                initialTime: selectedTime,
+                builder: (BuildContext context, Widget? child) {
+                  return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                    child: child ?? Container(),
+                  );
+                },
+              );
+              if (pickedTime != null && pickedTime != selectedTime) {
+                onTimePicked(pickedTime);
+              }
+            },
+            child: Text('Pick Time $index'),
+          ),
+        ],
+      ),
+    );
+  }
+}
