@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
       title: 'Family Share',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-      ),
+      ), 
       home: FamilySharePage(),
     );
   }
@@ -56,7 +56,7 @@ class _FamilySharePageState extends State<FamilySharePage> {
         children: <Widget>[
           ElevatedButton(
             onPressed: _showAddMemberDialog,
-            child: Text('เพิ่มสมาชิก'),
+            child: Text('กดเพื่อเพิ่มสมาชิก'),
           ),
           Expanded(
             child: ListView.builder(
@@ -77,6 +77,7 @@ class _FamilySharePageState extends State<FamilySharePage> {
 
 class FamilyMember {
   final String name;
+  final String surname;
   final String memberNumber;
   final String role; // 'ผู้รับประทานยา' หรือ 'สมาชิกใหม่'
   final String relationship;
@@ -85,6 +86,7 @@ class FamilyMember {
 
   FamilyMember({
     required this.name,
+    required this.surname,
     required this.memberNumber,
     required this.role,
     required this.relationship,
@@ -104,11 +106,12 @@ class AddMemberDialog extends StatefulWidget {
 
 class _AddMemberDialogState extends State<AddMemberDialog> {
   final _formKey = GlobalKey<FormState>();
-  String _name = '';
-  String _memberNumber = '';
+  String _name = 'กรุณากรอกชื่อของท่าน';
+  String _surname = 'กรุณากรอกนามสกุลของท่าน';
+  String _memberNumber = 'กรุณากรอกเลขบัตรประชาชนของท่าน';
   String _role = 'ผู้รับประทานยา';
   String _relationship = 'คุณพ่อ';
-  String _phoneNumber = '';
+  String _phoneNumber = 'กรุณากรอกหมายเลขโทรศัพท์ของท่าน';
   IconData _selectedIcon = Icons.person;
 
   @override
@@ -122,7 +125,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               TextFormField(
-                decoration: InputDecoration(labelText: 'ชื่อสมาชิก'),
+                decoration: InputDecoration(labelText: 'ชื่อผู้ติดตาม'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'กรุณากรอกชื่อสมาชิก';
@@ -134,10 +137,22 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                 },
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'เลขสมาชิก'),
+                decoration: InputDecoration(labelText: 'นามสกุลผู้ติดตาม'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'กรุณากรอกเลขสมาชิก';
+                    return 'กรุณากรอกนามสกุลสมาชิก';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _name = value!;
+                },
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'เลขบัตรประชาชน'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกเลขบัตรประชาชน';
                   }
                   return null;
                 },
@@ -146,23 +161,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                 },
               ),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'สถานะ'),
-                value: _role,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _role = newValue!;
-                  });
-                },
-                items: <String>['ผู้รับประทานยา', 'สมาชิกใหม่']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'ความสัมพันธ์'),
+                decoration: InputDecoration(labelText: 'สถานะของผู้รับทานยา'),
                 value: _relationship,
                 onChanged: (String? newValue) {
                   setState(() {
@@ -174,11 +173,35 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                   'คุณแม่',
                   'พี่สาว/พี่ชาย',
                   'น้องสาว/น้องชาย',
+                  'ลูกสาว/ลูกชาย',
+                  'คุณอา/คุณป้า',
+                  'คุณตา/คุณยาย',
+                  'คุณทวด',
+                ].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: 'สถานะของผู้ติดตาม'),
+                value: _relationship,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _relationship = newValue!;
+                  });
+                },
+                items: <String>[
+                  'คุณพ่อ',
+                  'คุณแม่',
+                  'พี่สาว/พี่ชาย',
+                  'น้องสาว/น้องชาย',
+                  'ลูกสาว/ลูกชาย',
                   'คุณอา/คุณป้า',
                   'คุณตา/คุณยาย',
                   'คุณทวด',
                   'ผู้ดูแล',
-                  'ผู้รับการดูแล'
                 ].map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -231,7 +254,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                 role: _role,
                 relationship: _relationship,
                 phoneNumber: _phoneNumber,
-                icon: _selectedIcon,
+                icon: _selectedIcon, surname: '',
               ));
               Navigator.of(context).pop();
             }
@@ -302,8 +325,8 @@ class FamilyMemberCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('เลขสมาชิก: ${member.memberNumber}'),
-            Text('สถานะ: ${member.role}'),
-            Text('ความสัมพันธ์: ${member.relationship}'),
+            Text('สถานะของผู้รับทานยา: ${member.role}'),
+            Text('สถานะของผู้ติดตาม: ${member.relationship}'),
             Text('เบอร์โทร: ${member.phoneNumber}'),
           ],
         ),
