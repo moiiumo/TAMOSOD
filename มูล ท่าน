@@ -1,0 +1,591 @@
+import 'package:flutter/material.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
+
+class UserInfoScreen extends StatefulWidget {
+  @override
+  _UserInfoScreenState createState() => _UserInfoScreenState();
+}
+
+class _UserInfoScreenState extends State<UserInfoScreen> {
+  String _userType = '';
+
+  void _selectUserType(String type) {
+    setState(() {
+      _userType = type;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_userType.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('โปรดเลือกประเภทผู้ใช้'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () => _selectUserType('patient'),
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.yellow[100],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.yellow[900]!, width: 2),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.medical_services, color: Colors.yellow[900]),
+                      SizedBox(width: 4,height:4 ),
+                      Text('ผู้รับประทานยา'),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: 4,height:4 ),
+              GestureDetector(
+                onTap: () => _selectUserType('caregiver'),
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.green[900]!, width: 2),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.phone, color: Colors.green[900]),
+                      SizedBox(width: 8),
+                      Text('ผู้ติดตาม'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (_userType == 'patient') {
+      return PatientFormPage(
+        onSubmit: (data) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserInfoPage(
+                userType: 'ผู้รับประทานยา',
+                userData: data,
+                onChangeStatus: () {
+                  setState(() {
+                    _userType = '';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return CaregiverFormPage(
+        onSubmit: (data) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserInfoPage(
+                userType: 'ผู้ติดตาม',
+                userData: data,
+                onChangeStatus: () {
+                  setState(() {
+                    _userType = '';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
+
+class PatientFormPage extends StatefulWidget {
+  final Function(Map<String, String>) onSubmit;
+
+  PatientFormPage({required this.onSubmit});
+
+  @override
+  _PatientFormPageState createState() => _PatientFormPageState();
+}
+
+class _PatientFormPageState extends State<PatientFormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _idNumberController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _appointmentHistoryController = TextEditingController();
+  final List<TextEditingController> _hospitalControllers = [];
+  final List<TextEditingController> _appointmentDateControllers = [];
+
+  String _gender = 'ชาย';
+  List<String> _selectedDiseases = [];
+  List<String> _selectedInsurance = [];
+
+  final Map<String, TextEditingController> _bloodTestControllers = {
+    'ความเข้มข้นของเลือด': TextEditingController(),
+    'น้ำตาลในเลือด': TextEditingController(),
+    'คอเลสเตอรอล': TextEditingController(),
+  };
+
+  static List<MultiSelectItem<String>> _diseases = [
+    'โรคหลอดเลือดหัวใจตีบ',
+    'โรคหัวใจขาดเลือด',
+    'โรคหลอดเลือดสมอง',
+    'โรคเบาหวาน',
+    'โรคความดันโลหิตสูง',
+    'โรคปอดอุดกั้นเรื้อรัง',
+    'โรคถุงลมโป่งพอง',
+    'โรคหอบหืด',
+    'โรคภูมิแพ้',
+    'โรคกรดไหลย้อน',
+    'โรคข้อเข่าเสื่อม',
+    'โรคกระดูกพรุน',
+    'โรคอื่นๆ'
+  ].map((e) => MultiSelectItem<String>(e, e)).toList();
+
+  static List<MultiSelectItem<String>> _insurance = [
+    'ชำระเอง',
+    'หลักประกันสุขภาพแห่งชาติ (30 บาทรักษาทุกโรค)',
+    'สิทธิ์ประกันสังคม',
+    'สิทธิ์สวัสดิการการรักษาพยาบาลของข้าราชการ',
+    'กรุงเทพประกันชีวิต',
+    'ไทยประกันชีวิต',
+    'เมืองไทยประกันชีวิต',
+    'ทิพยประกันชีวิต',
+    'แอกซ่าประกันชีวิต',
+    'สินมั่นคงประกันชีวิต',
+    'เอไอเอประกันชีวิต',
+    'เอฟดับบลิวดี ประกันชีวิต',
+    'กรุงไทย-แอกซ่า ประกันชีวิต',
+    'ฟิลลิปประกันชีวิต'
+  ].map((e) => MultiSelectItem<String>(e, e)).toList();
+
+  void _addHospitalField() {
+    if (_hospitalControllers.length < 5) {
+      setState(() {
+        _hospitalControllers.add(TextEditingController());
+        _appointmentDateControllers.add(TextEditingController());
+      });
+    }
+  }
+
+  void _removeHospitalField(int index) {
+    setState(() {
+      _hospitalControllers.removeAt(index);
+      _appointmentDateControllers.removeAt(index);
+    });
+  }
+
+  Widget _buildHospitalFields() {
+    List<Widget> fields = [];
+    for (int i = 0; i < _hospitalControllers.length; i++) {
+      fields.add(
+        Column(
+          children: [
+            TextFormField(
+              controller: _hospitalControllers[i],
+              decoration: InputDecoration(labelText: 'ชื่อโรงพยาบาล'),
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'กรุณากรอกชื่อโรงพยาบาล';
+                }
+                return null;
+              },
+            ),
+            TextFormField(
+              controller: _appointmentDateControllers[i],
+              decoration: InputDecoration(labelText: 'วันที่ที่นัดไปโรงพยาบาล'),
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'กรุณากรอกวันที่นัดหมาย';
+                }
+                return null;
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.remove_circle, color: Colors.red),
+              onPressed: () => _removeHospitalField(i),
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      );
+    }
+    return Column(children: fields);
+  }
+
+  Widget _buildBloodTestSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ข้อมูลการตรวจเลือด',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 10),
+        ..._bloodTestControllers.keys.map((test) {
+          return TextFormField(
+            controller: _bloodTestControllers[test],
+            decoration: InputDecoration(labelText: test),
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'กรุณากรอก$test';
+              }
+              return null;
+            },
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลผู้รับประทานยา'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'ชื่อ'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกชื่อ';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _surnameController,
+                decoration: InputDecoration(labelText: 'นามสกุล'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกนามสกุล';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _idNumberController,
+                decoration: InputDecoration(labelText: 'เลขประจำตัวประชาชน'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเลขประจำตัวประชาชน';
+                  }
+                  return null;
+                },
+              ),
+              DropdownButtonFormField<String>(
+                value: _gender,
+                items: ['ชาย', 'หญิง'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _gender = newValue!;
+                  });
+                },
+                decoration: InputDecoration(labelText: 'เพศ'),
+              ),
+              TextFormField(
+                controller: _weightController,
+                decoration: InputDecoration(labelText: 'น้ำหนัก (กก.)'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกน้ำหนัก';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _heightController,
+                decoration: InputDecoration(labelText: 'ส่วนสูง (ซม.)'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกส่วนสูง';
+                  }
+                  return null;
+                },
+              ),
+              MultiSelectDialogField(
+                items: _diseases,
+                title: Text("โรคประจำตัว"),
+                selectedColor: Colors.green,
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  border: Border.all(
+                    color: Colors.green,
+                    width: 2,
+                  ),
+                ),
+                buttonIcon: Icon(
+                  Icons.local_hospital,
+                  color: Colors.green,
+                ),
+                buttonText: Text(
+                  "เลือกโรคประจำตัว",
+                  style: TextStyle(
+                    color: Colors.green[900],
+                    fontSize: 16,
+                  ),
+                ),
+                onConfirm: (results) {
+                  setState(() {
+                    _selectedDiseases = results.cast<String>();
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              MultiSelectDialogField(
+                items: _insurance,
+                title: Text("ประกันสุขภาพ"),
+                selectedColor: Colors.green,
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  border: Border.all(
+                    color: Colors.green,
+                    width: 2,
+                  ),
+                ),
+                buttonIcon: Icon(
+                  Icons.local_hospital,
+                  color: Colors.green,
+                ),
+                buttonText: Text(
+                  "เลือกประกันสุขภาพ",
+                  style: TextStyle(
+                    color: Colors.green[900],
+                    fontSize: 16,
+                  ),
+                ),
+                onConfirm: (results) {
+                  setState(() {
+                    _selectedInsurance = results.cast<String>();
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              _buildBloodTestSection(),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _appointmentHistoryController,
+                decoration: InputDecoration(labelText: 'ประวัติการนัดหมาย'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกประวัติการนัดหมาย';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'ข้อมูลโรงพยาบาล',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              _buildHospitalFields(),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _addHospitalField,
+                child: Text('เพิ่มโรงพยาบาล'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Map<String, String> data = {
+                      'ชื่อ': _nameController.text,
+                      'นามสกุล': _surnameController.text,
+                      'เลขประจำตัวประชาชน': _idNumberController.text,
+                      'เพศ': _gender,
+                      'น้ำหนัก': _weightController.text,
+                      'ส่วนสูง': _heightController.text,
+                      'โรคประจำตัว': _selectedDiseases.join(', '),
+                      'ประกันสุขภาพ': _selectedInsurance.join(', '),
+                      'ประวัติการนัดหมาย': _appointmentHistoryController.text,
+                    };
+                    _bloodTestControllers.forEach((key, controller) {
+                      data[key] = controller.text;
+                    });
+                    for (int i = 0; i < _hospitalControllers.length; i++) {
+                      data['โรงพยาบาล ${i + 1}'] = _hospitalControllers[i].text;
+                      data['วันที่นัดหมาย ${i + 1}'] = _appointmentDateControllers[i].text;
+                    }
+                    widget.onSubmit(data);
+                  }
+                },
+                child: Text('ส่งข้อมูล'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CaregiverFormPage extends StatefulWidget {
+  final Function(Map<String, String>) onSubmit;
+
+  CaregiverFormPage({required this.onSubmit});
+
+  @override
+  _CaregiverFormPageState createState() => _CaregiverFormPageState();
+}
+
+class _CaregiverFormPageState extends State<CaregiverFormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _relationshipController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลผู้ติดตาม'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'ชื่อ'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกชื่อ';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _surnameController,
+                decoration: InputDecoration(labelText: 'นามสกุล'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกนามสกุล';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'เบอร์โทรศัพท์'),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกเบอร์โทรศัพท์';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _relationshipController,
+                decoration: InputDecoration(labelText: 'ความสัมพันธ์กับผู้ป่วย'),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'กรุณากรอกความสัมพันธ์';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Map<String, String> data = {
+                      'ชื่อ': _nameController.text,
+                      'นามสกุล': _surnameController.text,
+                      'เบอร์โทรศัพท์': _phoneController.text,
+                      'ความสัมพันธ์กับผู้ป่วย': _relationshipController.text,
+                    };
+                    widget.onSubmit(data);
+                  }
+                },
+                child: Text('ส่งข้อมูล'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class UserInfoPage extends StatelessWidget {
+  final String userType;
+  final Map<String, String> userData;
+  final VoidCallback onChangeStatus;
+
+  UserInfoPage({
+    required this.userType,
+    required this.userData,
+    required this.onChangeStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ข้อมูลของท่าน'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            Text(
+              'ประเภทผู้ใช้: $userType',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            ...userData.entries.map((entry) {
+              return ListTile(
+                title: Text('${entry.key}:'),
+                subtitle: Text(entry.value),
+              );
+            }).toList(),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: onChangeStatus,
+              child: Text('เปลี่ยนสถานะผู้ใช้'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
